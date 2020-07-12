@@ -15,14 +15,14 @@ Environment: Django Rest Framework, sqlite
     python manage.py makemigrations
     python manage.py migrate
 
-5) create superuser
+5) Create superuser
     python manage.py createsuperuser
     (add username, email, password)
 
-6) dump all movies datat to db from imdb.json file
+6) Dump all movies datat to db from imdb.json file
     python manage.py dump_movies
 
-7) start server 
+7) Start server 
     python manage.py runserver
   Output:
     Django version 3.0.8, using settings 'restapi.settings'                                       Starting development server at http://127.0.0.1:8000/                                         Quit the server with CTRL-BREAK. 
