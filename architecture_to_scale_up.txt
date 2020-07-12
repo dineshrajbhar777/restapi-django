@@ -1,0 +1,93 @@
+======================
+Architecture to scale 
+======================
+
+1) Django
+	Application Framework
+2) Postgres
+	Persistence Storage
+3) Redis
+	Cache
+5) Celery
+	Async Distributed Task Queue
+	
+	
+-------
+Django	
+-------
+
+All applications can be scaled using the vertical approach, however, if you want to scale your application horizontally, it does put some additional demands on the application itself, and in the context of web frameworks, it requires our Django Framework to provide certain features for us to be able to do this.
+
+The features required to scale our application horizontally are generally features that allow our application to be stateless. Stateless applications mean that they do not keep any state. They don’t store any data, images, sessions or files within them. They use third party services for all state, this includes things such as Databases, Memory Cache, Cloud Storage etc.
+
+Django is great when it comes to this, and it definitely gives us the tools needed for us to run our application completely stateless:
+
+    You can replace the default SQLite database (which store data locally) to instead store data on a database that is running on another server instance.
+
+    It supports custom File Storage Backends that allow you to store files on Amazon S3, DigitalOcean Spaces, Azure Blob Storage or any other cloud storage.
+
+    You can customize Sessions to be stored in a database or Key-Value Store (such as Redis) instead of on the file system.
+
+    You can use Cache Backends such as Memcache or Redis to store any cache on another server instead of the file system.
+
+
+Each one of these features allows us to store our application state somewhere else. The key point is not which technology we choose or where we store our state, as long as it’s not stored locally with our application.
+
+The reason for this is that if our application stores its state locally, whenever we would spawn a new server to run our application on, it would no longer have access to the same state as the first one. It would no longer be able to access the same files, the same sessions or the same data. We need to store all of these on a third location so that all of our application servers have access to it.
+
+
+---------
+Postgres
+---------
+PostgreSQL 9+ has streaming replication assume you're running identical database with identical version on identical architectures.
+
+Always use database-level connection pooling — which works very well when you are scaling your services horizontally. Django already does application level connection pooling, but things can get complicated when you are using a Celery worker — and you will end up using Celery workers. If you’re using PostgreSQL, pgBouncer is a drop-in solution for this.
+
+
+------
+Redis
+------
+
+Caching is another key part of the strategy to build a scalable and low-latency solution. Common read queries which do not change frequently can be cached to prevent them from causing database hits.
+
+
+
+-------
+Celery
+-------
+
+You’re going to need asynchronicity. Your application service should not be doing long-running tasks. Instead, it should offload it on to a queue and worker processes should pick up and work on these tasks in the background.
+    Use Celery for Asynchronous Tasks 
+    Use Celery with Redis and store results in Django ORM 
+    RQ is an alternative for distributing tasks.
+
+
+
+Other options:
+
+1) Load Balancing
+
+ ----------
+((( INTERNET )))
+   ----+-----
+       |
+       |
+       |
+  +-----------+
+  |  Gateway  |-----+
+  +-----------+     |
+                    |
+               +-----------------+  +-------------------+    +----------------+    
+               |  Load Balancer  |  |  Database Server  |    |  Web Server 1  |
+               +-----------------+  +-------------------+    +----------------+
+                      |                      |                       |
+Internal network -->  +----------------------+-----------------------+---------
+                      |                      |
+               +----------------+     +----------------+
+               |  Web Server 2  |     |  Web Server 3  |     (more web servers)
+               +----------------+     +----------------+
+
+
+2)Caching = Django + Varnish
+
+Varnish is a piece of software that sits between our load balancers and our Django backends and acts as an HTTP caching layer. What this means is that it can cache the entire HTTP response without even hitting a Django server, if we know that request won’t be unique.
